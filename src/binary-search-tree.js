@@ -23,26 +23,6 @@ Node.prototype.addNode = function (data) {
   }
 };
 
-// Node.prototype.hasNode = function (data) {
-//   if (data === this.data) {
-//     return true;
-//   } else {
-//     if (data < this.data) {
-//       if (this.left === null) {
-//         return false;
-//       } else {
-//         return this.left.hasNode(data);
-//       }
-//     } else if (data > this.data) {
-//       if (this.right === null) {
-//         return false;
-//       } else {
-//         return this.right.hasNode(data);
-//       }
-//     }
-//   }
-// };
-
 Node.prototype.findNode = function (data) {
   if (data === this.data) {
     return this;
@@ -63,25 +43,69 @@ Node.prototype.findNode = function (data) {
   }
 };
 
-// Node.prototype.minValue = function () {
-//   if (this.left === null) {
-//     return this.data;
-//   } else {
-//     return this.left.minValue();
-//   }
-// };
+Node.prototype.findParent = function (childNode) {
+  if (childNode === this) {
+    return null;
+  }
+  if (childNode === this.left || childNode === this.right) {
+    return this;
+  } else {
+    if (childNode.data < this.data) {
+      return this.left.findParent(childNode);
+    } else if (childNode.data > this.data) {
+      return this.right.findParent(childNode);
+    }
+  }
+};
 
-// Node.prototype.maxValue = function () {
-//   if (this.right === null) {
-//     return this.data;
-//   } else {
-//     return this.right.maxValue();
-//   }
-// };
+Node.prototype.removeChild = function (node) {
+  if (node.left === null && node.right === null) {
+    // 1. no child nodes
+    if (node === this.left) {
+      this.left = null;
+    } else if (node === this.right) {
+      this.right = null;
+    }
+  } else if (node.left !== null && node.right === null) {
+    // 2. only left child exists
+    const subTree = node.left;
+    if (node === this.left) {
+      this.left = subTree;
+    } else if (node === this.right) {
+      this.right = subTree;
+    }
+  } else if (node.left === null && node.right !== null) {
+    // 3. only right child exists
+    const subTree = node.right;
+    if (node === this.left) {
+      this.left = subTree;
+    } else if (node === this.right) {
+      this.right = subTree;
+    }
+  } else {
+    // 4. both children exist
+    // 4.1 right child has no subchild
+    if (node.right.left === null && node.right.right === null) {
+      node.data = node.right.data;
+      node.right = null;
+    } else if (node.right.left === null && node.right.right !== null) {
+      // 4.1 right child has only right subchild
+      node.data = node.right.data;
+      const subTree = node.right.right;
+      node.right = subTree;
+    } else if (node.right.left !== null) {
+      // 4.2 right child has left subchild
+      const rightSubTree = node.right;
+      const leftmostNode = rightSubTree.minmax("left");
+      node.data = leftmostNode.data;
+      return rightSubTree.removeChild(leftmostNode);
+    }
+  }
+};
 
 Node.prototype.minmax = function (branch) {
   if (this[branch] === null) {
-    return this.data;
+    return this;
   } else {
     return this[branch].minmax(branch);
   }
@@ -114,17 +138,29 @@ module.exports = class BinarySearchTree {
   }
 
   remove(data) {
-    this.tree.removeNode(data);
+    if (this.tree === null) {
+      return;
+    }
+
+    const node = this.tree.findNode(data);
+    if (node === null) {
+      return;
+    }
+
+    const parent = this.tree.findParent(node);
+    if (parent === null) {
+      this.tree.removeChild(node);
+    } else {
+      parent.removeChild(node);
+    }
   }
 
   min() {
-    // return this.tree.minValue();
-    return this.tree.minmax("left");
+    return this.tree.minmax("left").data;
   }
 
   max() {
-    // return this.tree.maxValue();
-    return this.tree.minmax("right");
+    return this.tree.minmax("right").data;
   }
 };
 
@@ -132,11 +168,20 @@ module.exports = class BinarySearchTree {
 // x.add(27);
 // x.add(35);
 // x.add(31);
-// x.add(45);
+// x.add(42);
 // x.add(14);
 // x.add(19);
 // x.add(10);
+// // x.add(17);
+// // x.add(21);
+// // x.add(18);
+// // x.add(16);
 
-// console.log(JSON.stringify(x.root()));
+// console.log("TREE before >>>>>");
 // console.log(x.root());
-// console.log(x.min(), x.max());
+// // console.log(x.root().left.right);
+// x.remove(27);
+// console.log("TREE after <<<<<");
+// console.log(x.root());
+// // console.log(x.root().left.right);
+// // console.log(x.min(), x.max());
